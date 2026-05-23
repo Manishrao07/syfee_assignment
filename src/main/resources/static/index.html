@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Finance Manager</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons & Chart.js CDNs -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --accent-primary: #6366f1;
+            --accent-secondary: #a855f7;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        header {
+            width: 100%;
+            max-width: 1200px;
+            padding: 2rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--panel-border);
+            color: var(--text-main);
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: none;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+        }
+
+        main {
+            width: 100%;
+            max-width: 1200px;
+            padding: 0 1.5rem 3rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 450px;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            backdrop-filter: blur(16px);
+            margin-top: 3rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Modal specific styles */
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.95);
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+            margin-top: 0;
+        }
+
+        .modal.active {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 99;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .auth-toggle {
+            display: flex;
+            margin-bottom: 2rem;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 4px;
+        }
+
+        .auth-toggle button {
+            flex: 1;
+            padding: 0.6rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+
+        .auth-toggle button.active {
+            background: var(--panel-bg);
+            color: var(--text-main);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            background: rgba(0, 0, 0, 0.35);
+        }
+
+        .auth-container h2 {
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .auth-container p.subtitle {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .dashboard {
+            width: 100%;
+            display: none;
+        }
+
+        .dashboard.active {
+            display: block;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+        }
+
+        .stat-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 140px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .stat-title {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-val {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin: 0.5rem 0;
+        }
+
+        .stat-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .grid-2-1 {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            width: 100%;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            .grid-2-1 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            padding: 0.8rem 1rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            border-bottom: 1px solid var(--panel-border);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            font-size: 0.95rem;
+        }
+
+        tr:hover td {
+            background: rgba(255,255,255,0.02);
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .pill-income {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .pill-expense {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+        }
+
+        .goal-bar-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 4px;
+            margin: 0.6rem 0;
+            overflow: hidden;
+        }
+
+        .goal-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            border-radius: 4px;
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-left: 4px solid var(--accent-primary);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            z-index: 1000;
+            transform: translateY(100px);
+            opacity: 0;
+        }
+
+        .notification.active {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .goals-list, .categories-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .goal-item {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--panel-border);
+            padding: 1rem;
+            border-radius: 12px;
+        }
+
+        .category-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.2);
+            padding: 0.8rem 1rem;
+            border-radius: 10px;
+            border: 1px solid var(--panel-border);
+        }
+
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filters input, .filters select {
+            padding: 0.5rem 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            color: var(--text-main);
+            outline: none;
+            font-size: 0.85rem;
+        }
+
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--panel-border);
+            padding: 0.4rem 0.8rem;
+            border-radius: 12px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo" style="display: flex; align-items: center; gap: 0.6rem;">
+            <i data-lucide="wallet" style="width: 28px; height: 28px; color: #818cf8;"></i>
+            <span>Syfe Finance</span>
+        </div>
+        <div id="header-user" style="display: none;">
+            <div class="user-badge" style="display: flex; align-items: center; gap: 0.8rem;">
+                <i data-lucide="user" style="width: 16px; height: 16px; color: var(--accent-primary);"></i>
+                <span id="user-display-name">Guest</span>
+                <button class="btn btn-secondary" onclick="logout()" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <i data-lucide="log-out" style="width: 14px; height: 14px;"></i> Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Auth View -->
+        <div id="auth-view" class="auth-container">
+            <div class="auth-toggle">
+                <button id="toggle-login" class="active" onclick="switchAuthMode('login')">Login</button>
+                <button id="toggle-register" onclick="switchAuthMode('register')">Register</button>
+            </div>
+            
+            <div id="login-form-div">
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="background: rgba(99, 102, 241, 0.1); width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto; color: var(--accent-primary);">
+                        <i data-lucide="shield-check" style="width: 28px; height: 28px;"></i>
+                    </div>
+                    <h2>Welcome Back</h2>
+                    <p class="subtitle">Access your personal finance manager</p>
+                </div>
+                <form id="login-form" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="login-username">Email Address</label>
+                        <input type="email" id="login-username" required placeholder="name@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%; margin-top: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                        <i data-lucide="log-in" style="width: 18px; height: 18px;"></i> Sign In
+                    </button>
+                </form>
+            </div>
+
+            <div id="register-form-div" style="display: none;">
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="background: rgba(168, 85, 247, 0.1); width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto; color: var(--accent-secondary);">
+                        <i data-lucide="user-plus" style="width: 28px; height: 28px;"></i>
+                    </div>
+                    <h2>Create Account</h2>
+                    <p class="subtitle">Get started with secure expense tracking</p>
+                </div>
+                <form id="register-form" onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label for="reg-fullname">Full Name</label>
+                        <input type="text" id="reg-fullname" required placeholder="John Doe">
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-username">Email Address</label>
+                        <input type="email" id="reg-username" required placeholder="name@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-phone">Phone Number</label>
+                        <input type="tel" id="reg-phone" required placeholder="+1234567890">
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-password">Password</label>
+                        <input type="password" id="reg-password" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%; margin-top: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                        <i data-lucide="user-check" style="width: 18px; height: 18px;"></i> Register
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Dashboard View -->
+        <div id="dashboard-view" class="dashboard">
+            <!-- Stats -->
+            <div class="grid-3">
+                <div class="card stat-card" style="border-left: 4px solid var(--accent-primary);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <div class="stat-title">Net Savings</div>
+                            <div class="stat-val" id="stat-savings">0</div>
+                        </div>
+                        <div style="background: rgba(99, 102, 241, 0.15); color: var(--accent-primary); padding: 0.75rem; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i data-lucide="wallet" style="width: 22px; height: 22px;"></i>
+                        </div>
+                    </div>
+                    <div class="stat-desc">Total income minus expenses</div>
+                </div>
+                <div class="card stat-card" style="border-left: 4px solid var(--success);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <div class="stat-title">Income</div>
+                            <div class="stat-val" id="stat-income" style="color: var(--success);">0</div>
+                        </div>
+                        <div style="background: rgba(16, 185, 129, 0.15); color: var(--success); padding: 0.75rem; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i data-lucide="trending-up" style="width: 22px; height: 22px;"></i>
+                        </div>
+                    </div>
+                    <div class="stat-desc">Salary and dynamic earnings</div>
+                </div>
+                <div class="card stat-card" style="border-left: 4px solid var(--danger);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <div class="stat-title">Expenses</div>
+                            <div class="stat-val" id="stat-expenses" style="color: var(--danger);">0</div>
+                        </div>
+                        <div style="background: rgba(239, 68, 68, 0.15); color: var(--danger); padding: 0.75rem; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i data-lucide="trending-down" style="width: 22px; height: 22px;"></i>
+                        </div>
+                    </div>
+                    <div class="stat-desc">Tracked outputs and bills</div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="grid-2-1">
+                <!-- Transactions Column -->
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+                            <i data-lucide="list-collapse" style="width: 24px; height: 24px; color: var(--accent-primary);"></i>
+                            Transactions
+                        </h2>
+                        <button class="btn" onclick="openTransactionModal()" style="display: flex; align-items: center; gap: 0.4rem;">
+                            <i data-lucide="plus" style="width: 18px; height: 18px;"></i> Add Transaction
+                        </button>
+                    </div>
+
+                    <div class="filters">
+                        <input type="date" id="filter-start-date" onchange="loadTransactions()">
+                        <input type="date" id="filter-end-date" onchange="loadTransactions()">
+                        <select id="filter-category" onchange="loadTransactions()">
+                            <option value="">All Categories</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="resetFilters()" style="display: flex; align-items: center; gap: 0.4rem;">
+                            <i data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></i> Reset
+                        </button>
+                    </div>
+
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Category</th>
+                                    <th>Description</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactions-tbody">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; color: var(--text-muted);">No transactions found.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Goals & Categories Column -->
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <!-- Expense Breakdown Chart -->
+                    <div class="card" id="breakdown-card" style="display: none;">
+                        <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i data-lucide="pie-chart" style="width: 20px; height: 20px; color: var(--accent-primary);"></i>
+                            Expense Breakdown
+                        </h2>
+                        <div style="height: 180px; display: flex; justify-content: center; align-items: center;">
+                            <canvas id="expense-chart" style="max-width: 160px; max-height: 160px;"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Savings Goals -->
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h2 style="font-size: 1.3rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+                                <i data-lucide="target" style="width: 20px; height: 20px; color: var(--accent-secondary);"></i>
+                                Savings Goals
+                            </h2>
+                            <button class="btn btn-secondary" style="padding: 0.3rem 0.8rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.3rem;" onclick="openGoalModal()">
+                                <i data-lucide="plus" style="width: 14px; height: 14px;"></i> New
+                            </button>
+                        </div>
+                        <div class="goals-list" id="goals-list-div">
+                            <div style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">No active savings goals.</div>
+                        </div>
+                    </div>
+
+                    <!-- Categories list -->
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h2 style="font-size: 1.3rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+                                <i data-lucide="tags" style="width: 20px; height: 20px; color: var(--accent-primary);"></i>
+                                Categories
+                            </h2>
+                            <button class="btn btn-secondary" style="padding: 0.3rem 0.8rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.3rem;" onclick="openCategoryModal()">
+                                <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Custom
+                            </button>
+                        </div>
+                        <div class="categories-list" id="categories-list-div">
+                            <!-- Categories go here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <!-- Modal Overlay -->
+    <div id="modal-overlay" class="modal-overlay" onclick="closeAllModals()"></div>
+
+    <!-- Transaction Modal -->
+    <div id="tx-modal" class="auth-container modal">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 id="tx-modal-title">Add Transaction</h2>
+            <button type="button" onclick="closeModal('tx-modal')" style="background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center;">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+        <form id="tx-form" onsubmit="saveTransaction(event)">
+            <input type="hidden" id="tx-id">
+            <div class="form-group">
+                <label for="tx-amount">Amount</label>
+                <input type="number" step="0.01" id="tx-amount" required min="0.01">
+            </div>
+            <div class="form-group">
+                <label for="tx-date">Date</label>
+                <input type="date" id="tx-date" required>
+            </div>
+            <div class="form-group">
+                <label for="tx-category">Category</label>
+                <select id="tx-category" required></select>
+            </div>
+            <div class="form-group">
+                <label for="tx-desc">Description (Optional)</label>
+                <input type="text" id="tx-desc">
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn" style="flex: 1;">Save</button>
+                <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="closeModal('tx-modal')">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Category Modal -->
+    <div id="cat-modal" class="auth-container modal">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2>Create Custom Category</h2>
+            <button type="button" onclick="closeModal('cat-modal')" style="background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center;">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+        <form id="cat-form" onsubmit="saveCategory(event)">
+            <div class="form-group">
+                <label for="cat-name">Category Name</label>
+                <input type="text" id="cat-name" required placeholder="e.g. SideHustle">
+            </div>
+            <div class="form-group">
+                <label for="cat-type">Category Type</label>
+                <select id="cat-type" required>
+                    <option value="INCOME">INCOME</option>
+                    <option value="EXPENSE">EXPENSE</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn" style="flex: 1;">Create</button>
+                <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="closeModal('cat-modal')">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Goal Modal -->
+    <div id="goal-modal" class="auth-container modal">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2>New Savings Goal</h2>
+            <button type="button" onclick="closeModal('goal-modal')" style="background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center;">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+        <form id="goal-form" onsubmit="saveGoal(event)">
+            <div class="form-group">
+                <label for="goal-name">Goal Name</label>
+                <input type="text" id="goal-name" required placeholder="e.g. Vacation Fund">
+            </div>
+            <div class="form-group">
+                <label for="goal-amount">Target Amount</label>
+                <input type="number" step="0.01" id="goal-amount" required min="0.01">
+            </div>
+            <div class="form-group">
+                <label for="goal-target-date">Target Date</label>
+                <input type="date" id="goal-target-date" required>
+            </div>
+            <div class="form-group">
+                <label for="goal-start-date">Start Date (Optional)</label>
+                <input type="date" id="goal-start-date">
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn" style="flex: 1;">Create</button>
+                <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="closeModal('goal-modal')">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification">Notification message here</div>
+
+    <!-- Javascript -->
+    <script>
+        const API_PREFIX = "/api";
+
+        function showNotification(msg, isError = false) {
+            const notif = document.getElementById("notification");
+            notif.innerText = msg;
+            notif.style.borderLeftColor = isError ? "var(--danger)" : "var(--accent-primary)";
+            notif.classList.add("active");
+            setTimeout(() => {
+                notif.classList.remove("active");
+            }, 3000);
+        }
+
+        function switchAuthMode(mode) {
+            const loginBtn = document.getElementById("toggle-login");
+            const registerBtn = document.getElementById("toggle-register");
+            const loginForm = document.getElementById("login-form-div");
+            const registerForm = document.getElementById("register-form-div");
+
+            if (mode === 'login') {
+                loginBtn.classList.add('active');
+                registerBtn.classList.remove('active');
+                loginForm.style.display = 'block';
+                registerForm.style.display = 'none';
+            } else {
+                loginBtn.classList.remove('active');
+                registerBtn.classList.add('active');
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById("login-username").value;
+            const password = document.getElementById("login-password").value;
+
+            try {
+                const res = await fetch(`${API_PREFIX}/auth/login`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotification("Logged in successfully!");
+                    document.getElementById("auth-view").style.display = 'none';
+                    document.getElementById("dashboard-view").classList.add('active');
+                    document.getElementById("header-user").style.display = 'block';
+                    document.getElementById("user-display-name").innerText = username;
+                    initDashboard();
+                } else {
+                    showNotification(data.message || "Failed to log in", true);
+                }
+            } catch (err) {
+                showNotification("Network error occurred", true);
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const fullName = document.getElementById("reg-fullname").value;
+            const username = document.getElementById("reg-username").value;
+            const phoneNumber = document.getElementById("reg-phone").value;
+            const password = document.getElementById("reg-password").value;
+
+            try {
+                const res = await fetch(`${API_PREFIX}/auth/register`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username, password, fullName, phoneNumber })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotification("Registered successfully! You can login now.");
+                    switchAuthMode('login');
+                } else {
+                    showNotification(data.message || "Registration failed", true);
+                }
+            } catch (err) {
+                showNotification("Network error occurred", true);
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch(`${API_PREFIX}/auth/logout`, { method: 'POST' });
+                showNotification("Logged out successfully!");
+                document.getElementById("auth-view").style.display = 'block';
+                document.getElementById("dashboard-view").classList.remove('active');
+                document.getElementById("header-user").style.display = 'none';
+            } catch (err) {
+                showNotification("Network error", true);
+            }
+        }
+
+        function initDashboard() {
+            loadCategories();
+            loadTransactions();
+            loadGoals();
+        }
+
+        async function loadCategories() {
+            try {
+                const res = await fetch(`${API_PREFIX}/categories`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const categoriesList = document.getElementById("categories-list-div");
+                    const filterSelect = document.getElementById("filter-category");
+                    const formSelect = document.getElementById("tx-category");
+                    
+                    categoriesList.innerHTML = "";
+                    filterSelect.innerHTML = '<option value="">All Categories</option>';
+                    formSelect.innerHTML = "";
+
+                    data.categories.forEach(cat => {
+                        // Populate categories tab
+                        const item = document.createElement("div");
+                        item.className = "category-item";
+                        
+                        const pillClass = cat.type === 'INCOME' ? 'pill-income' : 'pill-expense';
+                        item.innerHTML = `
+                            <div>
+                                <span style="font-weight:600; margin-right:8px;">${cat.name}</span>
+                                <span class="pill ${pillClass}">${cat.type}</span>
+                            </div>
+                            ${cat.isCustom ? `<button class="btn btn-secondary btn-danger" style="padding:0.25rem 0.5rem; font-size:0.75rem;" onclick="deleteCategory('${cat.name}')">Delete</button>` : ''}
+                        `;
+                        categoriesList.appendChild(item);
+
+                        // Populate filter select
+                        const opt1 = document.createElement("option");
+                        opt1.value = cat.name;
+                        opt1.innerText = cat.name;
+                        filterSelect.appendChild(opt1);
+
+                        // Populate form select
+                        const opt2 = document.createElement("option");
+                        opt2.value = cat.name;
+                        opt2.innerText = cat.name;
+                        formSelect.appendChild(opt2);
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to load categories", err);
+            }
+        }
+
+        async function loadTransactions() {
+            const startDate = document.getElementById("filter-start-date").value;
+            const endDate = document.getElementById("filter-end-date").value;
+            const category = document.getElementById("filter-category").value;
+
+            let query = "";
+            const params = [];
+            if (startDate) params.push(`startDate=${startDate}`);
+            if (endDate) params.push(`endDate=${endDate}`);
+            if (category) params.push(`category=${category}`);
+            if (params.length > 0) query = "?" + params.join("&");
+
+            try {
+                const res = await fetch(`${API_PREFIX}/transactions${query}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const tbody = document.getElementById("transactions-tbody");
+                    tbody.innerHTML = "";
+
+                    let income = 0;
+                    let expense = 0;
+                    const categoryExpenses = {};
+                    let totalExpense = 0;
+
+                    if (data.transactions.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No transactions found.</td></tr>`;
+                    } else {
+                        data.transactions.forEach(tx => {
+                            const tr = document.createElement("tr");
+                            const pillClass = tx.type === 'INCOME' ? 'pill-income' : 'pill-expense';
+                            const amtSign = tx.type === 'INCOME' ? '+' : '-';
+                            const amtColor = tx.type === 'INCOME' ? 'var(--success)' : 'var(--danger)';
+
+                            if (tx.type === 'INCOME') {
+                                income += tx.amount;
+                            } else {
+                                expense += tx.amount;
+                                categoryExpenses[tx.category] = (categoryExpenses[tx.category] || 0) + tx.amount;
+                                totalExpense += tx.amount;
+                            }
+
+                            tr.innerHTML = `
+                                <td style="font-weight:500;">${tx.date}</td>
+                                <td>${tx.category}</td>
+                                <td style="color:var(--text-muted);">${tx.description || '-'}</td>
+                                <td><span class="pill ${pillClass}">${tx.type}</span></td>
+                                <td style="font-weight:700; color:${amtColor};">${amtSign}$${tx.amount.toFixed(2)}</td>
+                                <td>
+                                    <div style="display:flex; gap:0.5rem;">
+                                        <button class="btn btn-secondary" style="padding:0.4rem; border-radius:8px; display:inline-flex; align-items:center;" onclick="editTransaction(${tx.id}, ${tx.amount}, '${tx.category}', '${tx.description || ''}', '${tx.date}')" title="Edit">
+                                            <i data-lucide="pencil" style="width: 14px; height: 14px;"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-danger" style="padding:0.4rem; border-radius:8px; display:inline-flex; align-items:center;" onclick="deleteTransaction(${tx.id})" title="Delete">
+                                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    }
+
+                    // Update UI Stats
+                    document.getElementById("stat-income").innerText = `$${income.toFixed(2)}`;
+                    document.getElementById("stat-expenses").innerText = `$${expense.toFixed(2)}`;
+                    const net = income - expense;
+                    const netSavingsElement = document.getElementById("stat-savings");
+                    netSavingsElement.innerText = `$${net.toFixed(2)}`;
+                    netSavingsElement.style.color = net >= 0 ? 'var(--success)' : 'var(--danger)';
+
+                    // Update Expense Chart
+                    updateExpenseChart(categoryExpenses, totalExpense);
+
+                    lucide.createIcons();
+                }
+            } catch (err) {
+                console.error("Failed to load transactions", err);
+            }
+        }
+
+        function updateExpenseChart(categoryExpenses, totalExpense) {
+            const card = document.getElementById("breakdown-card");
+            if (totalExpense === 0) {
+                card.style.display = "none";
+                return;
+            }
+            card.style.display = "block";
+
+            const labels = Object.keys(categoryExpenses);
+            const data = Object.values(categoryExpenses);
+
+            const ctx = document.getElementById('expense-chart').getContext('2d');
+            
+            if (expenseChartInstance) {
+                expenseChartInstance.destroy();
+            }
+
+            const colors = [
+                '#6366f1', '#a855f7', '#ec4899', '#f43f5e', 
+                '#ef4444', '#f97316', '#f59e0b', '#eab308',
+                '#84cc16', '#22c55e', '#10b981', '#14b8a6', 
+                '#06b6d4', '#0ea5e9', '#3b82f6'
+            ];
+
+            expenseChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#94a3b8',
+                                font: {
+                                    family: 'Outfit',
+                                    size: 11
+                                },
+                                boxWidth: 10,
+                                padding: 10
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const percentage = ((value / totalExpense) * 100).toFixed(1);
+                                    return ` $${value.toFixed(2)} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+        }
+
+        async function loadGoals() {
+            try {
+                const res = await fetch(`${API_PREFIX}/goals`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const list = document.getElementById("goals-list-div");
+                    list.innerHTML = "";
+
+                    if (data.goals.length === 0) {
+                        list.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">No active savings goals.</div>`;
+                    } else {
+                        data.goals.forEach(goal => {
+                            const item = document.createElement("div");
+                            item.className = "goal-item";
+                            item.innerHTML = `
+                                <div style="display:flex; justify-content:space-between; align-items:center; font-weight:600; font-size:0.95rem; margin-bottom: 0.5rem;">
+                                    <span style="display:flex; align-items:center; gap:0.4rem;">
+                                        <i data-lucide="target" style="width:16px; height:16px; color:var(--accent-secondary);"></i>
+                                        ${goal.goalName}
+                                    </span>
+                                    <span>$${goal.currentProgress.toFixed(2)} <span style="font-size:0.8rem; color:var(--text-muted);">/ $${goal.targetAmount.toFixed(2)}</span></span>
+                                </div>
+                                <div class="goal-bar-container">
+                                    <div class="goal-bar" style="width: ${Math.min(goal.progressPercentage, 100)}%; transition: width 1s ease-out;"></div>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:var(--text-muted); margin-top: 0.5rem;">
+                                    <span>Progress: ${goal.progressPercentage}%</span>
+                                    <span style="display:flex; align-items:center; gap:0.25rem;">
+                                        <i data-lucide="calendar" style="width:12px; height:12px;"></i>
+                                        Ends: ${goal.targetDate}
+                                    </span>
+                                </div>
+                                <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+                                    <button class="btn btn-secondary btn-danger" style="padding:0.3rem 0.6rem; border-radius:8px; display:inline-flex; align-items:center; gap:0.3rem; font-size:0.75rem;" onclick="deleteGoal(${goal.id})">
+                                        <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i> Delete
+                                    </button>
+                                </div>
+                            `;
+                            list.appendChild(item);
+                        });
+                    }
+                    lucide.createIcons();
+                }
+            } catch (err) {
+                console.error("Failed to load goals", err);
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById("filter-start-date").value = "";
+            document.getElementById("filter-end-date").value = "";
+            document.getElementById("filter-category").value = "";
+            loadTransactions();
+        }
+
+        // Modals management
+        function openModal(id) {
+            document.getElementById(id).classList.add("active");
+            document.getElementById("modal-overlay").classList.add("active");
+            lucide.createIcons();
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove("active");
+            const txOpen = document.getElementById("tx-modal").classList.contains("active");
+            const catOpen = document.getElementById("cat-modal").classList.contains("active");
+            const goalOpen = document.getElementById("goal-modal").classList.contains("active");
+            if (!txOpen && !catOpen && !goalOpen) {
+                document.getElementById("modal-overlay").classList.remove("active");
+            }
+        }
+
+        function closeAllModals() {
+            closeModal('tx-modal');
+            closeModal('cat-modal');
+            closeModal('goal-modal');
+        }
+
+        function openTransactionModal() {
+            document.getElementById("tx-modal-title").innerText = "Add Transaction";
+            document.getElementById("tx-id").value = "";
+            document.getElementById("tx-amount").value = "";
+            document.getElementById("tx-date").value = new Date().toISOString().split('T')[0];
+            document.getElementById("tx-desc").value = "";
+            document.getElementById("tx-date").disabled = false;
+            openModal("tx-modal");
+        }
+
+        function editTransaction(id, amount, category, description, date) {
+            document.getElementById("tx-modal-title").innerText = "Edit Transaction";
+            document.getElementById("tx-id").value = id;
+            document.getElementById("tx-amount").value = amount;
+            document.getElementById("tx-category").value = category;
+            document.getElementById("tx-desc").value = description;
+            document.getElementById("tx-date").value = date;
+            document.getElementById("tx-date").disabled = true; // Date cannot be edited
+            openModal("tx-modal");
+        }
+
+        function openCategoryModal() {
+            document.getElementById("cat-name").value = "";
+            document.getElementById("cat-type").value = "EXPENSE";
+            openModal("cat-modal");
+        }
+
+        function openGoalModal() {
+            document.getElementById("goal-name").value = "";
+            document.getElementById("goal-amount").value = "";
+            document.getElementById("goal-target-date").value = "";
+            document.getElementById("goal-start-date").value = new Date().toISOString().split('T')[0];
+            openModal("goal-modal");
+        }
+
+        async function saveTransaction(e) {
+            e.preventDefault();
+            const id = document.getElementById("tx-id").value;
+            const amount = parseFloat(document.getElementById("tx-amount").value);
+            const date = document.getElementById("tx-date").value;
+            const category = document.getElementById("tx-category").value;
+            const description = document.getElementById("tx-desc").value;
+
+            const url = id ? `${API_PREFIX}/transactions/${id}` : `${API_PREFIX}/transactions`;
+            const method = id ? 'PUT' : 'POST';
+            
+            // Build body: update doesn't allow changing date
+            const body = id ? { amount, category, description } : { amount, date, category, description };
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotification(id ? "Transaction updated!" : "Transaction created!");
+                    closeModal("tx-modal");
+                    loadTransactions();
+                    loadGoals();
+                } else {
+                    showNotification(data.message || "Failed to save transaction", true);
+                }
+            } catch (err) {
+                showNotification("Network error occurred", true);
+            }
+        }
+
+        async function saveCategory(e) {
+            e.preventDefault();
+            const name = document.getElementById("cat-name").value;
+            const type = document.getElementById("cat-type").value;
+
+            try {
+                const res = await fetch(`${API_PREFIX}/categories`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ name, type })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotification("Custom category created!");
+                    closeModal("cat-modal");
+                    loadCategories();
+                } else {
+                    showNotification(data.message || "Failed to create category", true);
+                }
+            } catch (err) {
+                showNotification("Network error occurred", true);
+            }
+        }
+
+        async function saveGoal(e) {
+            e.preventDefault();
+            const goalName = document.getElementById("goal-name").value;
+            const targetAmount = parseFloat(document.getElementById("goal-amount").value);
+            const targetDate = document.getElementById("goal-target-date").value;
+            const startDate = document.getElementById("goal-start-date").value || null;
+
+            try {
+                const res = await fetch(`${API_PREFIX}/goals`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ goalName, targetAmount, targetDate, startDate })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotification("Savings goal created!");
+                    closeModal("goal-modal");
+                    loadGoals();
+                } else {
+                    showNotification(data.message || "Failed to create goal", true);
+                }
+            } catch (err) {
+                showNotification("Network error occurred", true);
+            }
+        }
+
+        async function deleteTransaction(id) {
+            if (!confirm("Are you sure you want to delete this transaction?")) return;
+            try {
+                const res = await fetch(`${API_PREFIX}/transactions/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showNotification("Transaction deleted!");
+                    loadTransactions();
+                    loadGoals();
+                } else {
+                    showNotification("Failed to delete transaction", true);
+                }
+            } catch (err) {
+                showNotification("Network error", true);
+            }
+        }
+
+        async function deleteCategory(name) {
+            if (!confirm(`Are you sure you want to delete category "${name}"?`)) return;
+            try {
+                const res = await fetch(`${API_PREFIX}/categories/${name}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotification("Category deleted!");
+                    loadCategories();
+                } else {
+                    showNotification(data.message || "Failed to delete category", true);
+                }
+            } catch (err) {
+                showNotification("Network error", true);
+            }
+        }
+
+        async function deleteGoal(id) {
+            if (!confirm("Are you sure you want to delete this goal?")) return;
+            try {
+                const res = await fetch(`${API_PREFIX}/goals/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showNotification("Goal deleted!");
+                    loadGoals();
+                } else {
+                    showNotification("Failed to delete goal", true);
+                }
+            } catch (err) {
+                showNotification("Network error", true);
+            }
+        }
+    </script>
+</body>
+</html>
