@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/goals")
+@RequestMapping("/api/goals")
 public class GoalController {
 
     private final GoalRepository goalRepository;

@@ -49,8 +49,8 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) // Use standard sessions
             )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/register", "/auth/login").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
+                .requestMatchers("/", "/api/auth/register", "/api/auth/login").permitAll()
+                .requestMatchers("/api/h2-console/**").permitAll()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(exception -> exception
